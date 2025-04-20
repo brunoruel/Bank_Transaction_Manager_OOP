@@ -43,10 +43,15 @@ class FileImport:
     
     def is_valid_csv_structure(self):
             return all(all(keys in tx.keys() for keys in TX_RAW_HEADER) for tx in self.data)
+    
+    @staticmethod
+    def save_json_data(data, filepath):
+        with open(filepath, 'w', encoding='utf-8') as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
 
     @staticmethod
     def request_file_from_user():
-        return input("📎 Drag and drop your transactions file: ").strip("'")
+        return input("📎 Drag and drop your file: ").strip("'")
 
     def run_import(self, max_attempt = 3) -> list[dict[str, any]]:
         attempt = 0

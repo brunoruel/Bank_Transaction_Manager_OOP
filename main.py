@@ -6,14 +6,13 @@ from data_pipeline import DataPipeLine
 #------------CSV FILE IMPORTATION TO LIBRARIES LIST ----------------
 
 start = FileImport(url_csv_5_months, "csv")
-FileImport.run_import(start)
-raw_data_list = start.data
-
+raw_data_list = start.run_import()
 
 #-------------FORMAT DATA FOR EXCEL EXPORT ------------------------
 
 data_pipeline = DataPipeLine(raw_data_list)
-data_pipeline.run_pipeline()
-data_ready = data_pipeline.categorized_transactions
+data_ready = data_pipeline.run_pipeline()
+
+
 
 
