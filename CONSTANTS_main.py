@@ -1,5 +1,3 @@
-from files_import import FileImport
-from CONSTANTS_url import url_json
 
 
 class ConstantsTx:
@@ -10,10 +8,9 @@ class ConstantsTx:
         "DEBIT CARD PURCHASE ",
         "PAYMENT BY AUTHORITY TO ",
         "Withdrawal Mobile ",
-        "Eftpos Debit"
+        "Eftpos Debit",
+        "Withdrawal Online"
     ]
-
-    CATEGORIES_KEY_WORDS = FileImport(url_json, "json").run_import()
 
     FLOAT_KEYS = ["Debit Amount", "Credit Amount", "Balance"]
 
