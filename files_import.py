@@ -86,7 +86,12 @@ class FileImport:
         
 
 
-
+class FileSaving:
+    @staticmethod
+    def json_saving(file_path, data):
+        with open(file_path, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4, ensure_ascii=False)
+        
 
 
 

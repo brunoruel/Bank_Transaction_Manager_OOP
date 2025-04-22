@@ -1,5 +1,4 @@
 
-
 class ConstantsTx:
     
     TX_RAW_HEADER = ['Bank Account', 'Date', 'Narrative', 'Debit Amount', 'Credit Amount', 'Balance', 'Categories', 'Serial']
