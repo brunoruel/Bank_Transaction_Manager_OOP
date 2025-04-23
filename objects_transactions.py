@@ -1,25 +1,13 @@
-from copy import copy, deepcopy
 import re
 from datetime import datetime
 from collections import defaultdict
 import pandas as pd
 
-from objects_categories_keywords import CategoriesManager
 from CONSTANTS_main import ConstantsTx
-from files_import import FileImport
-
-# Test import:
-from CONSTANTS_url import url_json, url_csv_5_months
-from var_test import raw_tx_test
-import_json = FileImport(url_json, "json").init_import()
-CATEGORIES_KEY_WORDS = import_json.run_import()
-raw_data_test_importer = FileImport(url_csv_5_months, "csv").init_import().run_import()
-
-test = CategoriesManager(CATEGORIES_KEY_WORDS).categories_keys
 
 
 class Transaction:
-    def __init__(self, raw_data:dict):
+    def __init__(self, raw_data:dict, category_instance):
         self.raw_data = raw_data
         self.cleaned_data = {}
 
@@ -39,6 +27,8 @@ class Transaction:
         self.month = ""
         self.year_month = ""
 
+        self.category_instance = category_instance
+
         self.format = {}
 
     def convert_date_to_datetime(self):
@@ -54,8 +44,8 @@ class Transaction:
         except ValueError:
             self.amount = 0.0
 
-    def categories_add(self):
-        self.category = CategoriesManager(CATEGORIES_KEY_WORDS).categorie_match(self.narrative)
+    def categories_add(self, categorie_instance):
+        self.category = categorie_instance.categorie_match(self.narrative)
 
     def clean_narrative(self):
         for words in ConstantsTx.TO_DELETE_IN_NARRATIVE:
@@ -101,17 +91,18 @@ class Transaction:
     def run(self) -> dict:
         self.convert_date_to_datetime()
         self.compute_amount()
-        self.categories_add()
         self.clean_narrative()
+        self.categories_add(self.category_instance)
         self.account_column()
         self.add_year_month_column()
         return self
     
 
 class Transactions_list:
-    def __init__(self, raw_data_list):
-        self.raw_data_list = [Transaction(raw) for raw in raw_data_list]
-        self.transactions = [Transaction(cleaned_tx).run() for cleaned_tx in raw_data_list]
+    def __init__(self, raw_data_list, categories_instance):
+        self.categories_instance = categories_instance
+        self.raw_data_list = [Transaction(raw, self.categories_instance) for raw in raw_data_list]
+        self.transactions = [Transaction(cleaned_tx, self.categories_instance).run() for cleaned_tx in raw_data_list]
         self.sort_per_month = []
 
     def __iter__(self):

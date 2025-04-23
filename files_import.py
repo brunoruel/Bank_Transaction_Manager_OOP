@@ -7,7 +7,7 @@ import csv
 import json
 
 from CONSTANTS_main import ConstantsTx
-
+from utils_functions import pretty_print, press_enter_to_continue
 
 
 class BaseFileImporter(ABC):
@@ -29,16 +29,19 @@ class BaseFileImporter(ABC):
     
     def run_import(self):
         if not self.file_exists:
-            print(f"{Fore.RED}❌ The path file is incorrect or file inexistent")
+            pretty_print("❌ The path file is incorrect or file inexistent", style=Fore.RED, clear=True)
+            input()
             return []
         
         self.import_file()
 
         if not self.validate():
-            print(f"{Fore.RED}❌ The file imported is not valid")
+            pretty_print("❌ The file imported is not valid", style={Fore.RED}, clear=True)
+            press_enter_to_continue()
+            input()
             return[]
-        
-        print(f"{Fore.GREEN}✅ File Imported Successfully")
+        print()
+        print()
         return self.data
 
 
@@ -70,7 +73,8 @@ class FileImport:
     def request_file_path_from_user():
         print("=" * 50)
         print()
-        return input("💾 Drag and drop your file: ").strip("'")
+        pretty_print("💾 Drag and drop your file: ", style=Fore.RED)
+        return input().strip("'")
 
     def init_import(self):
         while True:
@@ -81,7 +85,7 @@ class FileImport:
             if self.url.endswith("csv") and self.type == "csv":
                 return CSVImporter(self.url)
             else:
-                print(f"{Fore.RED}❌ Not a valid file type")
+                pretty_print("❌ Not a valid file type", style=Fore.RED)
                 self.url = ""
         
 

@@ -1,13 +1,8 @@
 from colorama import init, Fore, Style
 init(autoreset=True)
 
-from files_import import FileSaving, FileImport
-from CONSTANTS_url import url_json
-from var_test import cat_single_test
-
-import_json = FileImport(url_json, "json").init_import()
-CATEGORIES_KEY_WORDS = import_json.run_import()
-
+from files_import import FileSaving
+from utils_functions import clear_console
 
 class CategorieKeywords:
     def __init__(self, categorie_name: str, kws_list: list):
@@ -60,6 +55,7 @@ class CategoriesManager:
         return "Non identifiee"
 
     def get_cat_from_user(self):
+        clear_console()
         print("Which categorie would you like to modify: ")
         print()
 
@@ -82,13 +78,17 @@ class CategoriesManager:
 
     def get_kw_from_user(self, kws_list):
         print()
+        clear_console()
         print(f"Which keyword would you like to remove?")
         print()
         for i, kw in enumerate(kws_list):
             print(f"{i+1} - {kw}")
+        print("q - Cancel")
         while True:
             print()
             kw_choice = input("Your choice: ")
+            if kw_choice == "q":
+                return ""
             try:
                 kw_choice = int(kw_choice)
             except ValueError:
@@ -104,6 +104,9 @@ class CategoriesManager:
         cat_choice = self.get_cat_from_user()
         kws_list = self.categories_dict[cat_choice]
         kw_to_remove = self.get_kw_from_user(kws_list)
+        if kw_to_remove == "":
+            return None
+        clear_console()
         print()
         print(f"🔴 Are you sure you want to remove {kw_to_remove} from the {cat_choice} category?")
         print()
@@ -122,6 +125,38 @@ class CategoriesManager:
             print(f"🟢 {kw_to_add} added to {cat}")
             print()
             return self.categories_kws[cat].add_keywords(kw_to_add)
+        
+    def add_category(self):
+        new_keywords = []
+        new_category = ""
+        while True:
+            clear_console()
+            new_category = input("Enter the name of the new categorie (enter to cancel): ")      
+            if new_category and new_category in self.categories_keys:
+                print()
+                print("Category already created, find another name.")
+            elif not new_category:
+                return
+            else:
+                break
+
+        while True:
+            clear_console()
+            new_keyword = input("Enter the name of a new keyword (enter to cancel): ")
+            if new_keyword and new_keyword in new_keywords:
+                print("🔴 Keyword already added, find another name.")
+            elif not new_keyword:
+                break
+            else:
+                new_keywords.append(new_keyword)
+                print(f"🟢{new_keyword} added{Fore.GREEN}")
+        clear_console()
+        add_print = f"{len(new_keywords)} key words added" if new_keywords else "no keywords added"
+        self.categories_kws[new_category] = CategorieKeywords(new_category, new_keywords)
+        print(f"The {new_category} has been added, {add_print}")
+
+            
+
         
     def save_changes(self):
         FileSaving.json_saving(url_json, self.categories_dict)
