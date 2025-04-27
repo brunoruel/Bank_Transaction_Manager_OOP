@@ -2,8 +2,18 @@ import re
 from datetime import datetime
 from collections import defaultdict
 import pandas as pd
+from colorama import Fore, Style
+import time
 
+from user_interface import TransactionsInterface
+from utils_functions import InterfaceStyle, InterfaceTool
+from files_import import FileSaving
+
+from CONSTANTS_url import url_categories_json
 from CONSTANTS_main import ConstantsTx
+
+
+
 
 
 class Transaction:
@@ -59,6 +69,8 @@ class Transaction:
         for account_type, account_number in ConstantsTx.ACCOUNTS.items():
             if self.bank_account == account_number:
                 self.account = account_type
+                return self.account
+
 
     def add_year_month_column(self):
         self.year = str(self.date.year)
@@ -85,14 +97,14 @@ class Transaction:
     
     def assign_category(self, category_choice):
         self.category = category_choice
-        print(f"{category_choice} successfully assigned to {self.narrative}")
+        InterfaceStyle.pretty_print(f"✅ {category_choice} successfully assigned to {self.narrative}", style=Fore.GREEN)
 
     
     def run(self) -> dict:
         self.convert_date_to_datetime()
         self.compute_amount()
-        self.clean_narrative()
         self.categories_add(self.category_instance)
+        self.clean_narrative()
         self.account_column()
         self.add_year_month_column()
         return self
@@ -104,6 +116,7 @@ class Transactions_list:
         self.raw_data_list = [Transaction(raw, self.categories_instance) for raw in raw_data_list]
         self.transactions = [Transaction(cleaned_tx, self.categories_instance).run() for cleaned_tx in raw_data_list]
         self.sort_per_month = []
+
 
     def __iter__(self):
         return iter(self.transactions)
@@ -130,38 +143,87 @@ class Transactions_list:
             dict_transactions.append(tx.to_dict())
         return dict_transactions
 
+    @property
     def categorize_per_month(self):
         categorized_tx = defaultdict(list)
         for tx in self.transactions:
             month = tx.year_month
-            categorized_tx[month].append(tx.to_dict())
-
+            categorized_tx[month].append(tx)
         return categorized_tx
+
     
     def to_data_frame(self):
         return pd.DataFrame([tx.to_dict() for tx in self.transactions])
     
+    def categorize_per_month_as_data_frames(self):
+        new_dict = {}
+        for month in self.categorize_per_month:
+            new_dict[month] = pd.DataFrame([tx.to_dict() for tx in self.categorize_per_month[month]])
+        
+        return new_dict
+    
+    @property
     def get_unidentified_category_list(self):
         # return a list of transactions with "non identifiee" category
         return [tx for tx in self.transactions if tx.category == "Non identifiee"]
 
-# ================  TO FINISH ==========        TOP     ===================
 
-    def category_assign_unidentifed(self, category_list): # category list is from CategoryManager().categories_keys()
+    def category_assign_unidentifed(self, categories_instance, keywords): 
+        # category list is from CategoryManager().categories_keys()
         # user is asked to assign a categorie for transactions with "Non identifiee" category
-        unidentified_tx = self.get_unidentified_category_list()
-        print("Choose a categorie to assign to the transactions")
-        for i, value in enumerate(category_list):
-            print(f"{i + 1} - {value}")
-        for tx in unidentified_tx:
-            print(f"{tx.narrative}")
-            choice = input("Your choice: ")
-            choice = int(choice) - 1
-            category_choice = category_list[choice]
-            tx.assign_category(category_choice)
-
-# ================  TO FINISH ==========        BOTTOM     ===================
+        category_list = self.categories_instance.categories_keys
+        already_identified = {}
+        unidentified_tx_count = len(self.get_unidentified_category_list)
 
 
+        len_tx = len(self.transactions)
+        i = 0
+
+        while i < len_tx:
+            tx = self.transactions[i]
+            narrative = tx.narrative
+            raw_tx_narratine = self.raw_data_list[i].narrative
+
+            if tx.category != "Non identifiee":
+                i += 1
+                continue
+            
+            if narrative in already_identified:
+                tx.assign_category(already_identified[narrative])
+                i += 1
+                continue
+            
+            else:
+                choice = TransactionsInterface.get_cat_to_assign(category_list, narrative, unidentified_tx_count)
+
+                if choice == None:
+                    return
+                elif choice == "s":
+                    self.categories_instance.save_changes(url_categories_json, self.categories_instance.categories_dict)
+                    continue
+                else:
+                    category_choice = category_list[choice]
+                    tx.assign_category(category_choice)
+                    already_identified[narrative] = category_choice
+                    self.categories_instance.categories_kws[category_choice].add_keywords(raw_tx_narratine)
+                    i += 1
+                
+                    time.sleep(2)
+                    continue
+        
+            self.categories_instance.save_changes(url_categories_json, self.categories_instance.categories_dict)
 
 
+    def user_narrative_modification(self):
+        month_list = [x for x in self.categorize_per_month]
+        while True:
+            tx, new_narrative = TransactionsInterface.ui_modify_tx_narrative(self.categorize_per_month, month_list)
+            if not tx or not new_narrative:
+                break
+
+            else:
+                tx.narrative = new_narrative
+
+
+
+        
